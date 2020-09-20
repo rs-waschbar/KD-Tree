@@ -11,6 +11,11 @@ import edu.princeton.cs.algs4.RectHV;
 import java.util.ArrayList;
 import java.util.TreeSet;
 
+/**
+ * Bruteforce implementation that represents
+ * a set of points in the unit square.
+ * Implementing by using a red–black BST:
+ */
 public class PointSET {
     private final TreeSet<Point2D> points;
 
