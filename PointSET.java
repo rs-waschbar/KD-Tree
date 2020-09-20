@@ -1,44 +1,81 @@
-/* *****************************************************************************
- *  Name:
- *  Date:
- *  Description:
+/** *****************************************************************************
+ *  Name: Ruslan Zhdanov
+ *  Date: 09/20/2020
+ *  Description: Coursera Princeton Algorithms course part 1
+ *               week 5 assignment
  **************************************************************************** */
 
 import edu.princeton.cs.algs4.Point2D;
 import edu.princeton.cs.algs4.RectHV;
 
+import java.util.ArrayList;
+import java.util.TreeSet;
+
 public class PointSET {
+    private final TreeSet<Point2D> points;
 
     public PointSET() {
+        points = new TreeSet<>();
+    }
 
-    } // construct an empty set of points
     public boolean isEmpty() {
-
-        return false;
-    }                     // is the set empty?
+        return points.isEmpty();
+    }
 
     public int size() {
+        return points.size();
+    }
 
-        return 0;
-    } // number of points in the set
+    // add the point to the set (if it is not already in the set)
     public void insert(Point2D p) {
+        if (p == null) throw new IllegalArgumentException("Point must not be null");
+        points.add(p);
+    }
 
-    } // add the point to the set (if it is not already in the set)
+    // does the set contain point p?
     public boolean contains(Point2D p) {
+        if (p == null) throw new IllegalArgumentException("Point must not be null");
+        return points.contains(p);
+    }
 
-        return  false;
-    }           // does the set contain point p?
+    // draw all points to standard draw
     public void draw() {
+        for (Point2D p : points) {
+            p.draw();
+        }
+    }
 
-    }                        // draw all points to standard draw
+    // all points that are inside the rectangle (or on the boundary)
     public Iterable<Point2D> range(RectHV rect) {
+        if (rect == null) throw new IllegalArgumentException("Rectangle must not be null");
 
-        return null;
-    }            // all points that are inside the rectangle (or on the boundary)
+        ArrayList<Point2D> arr = new ArrayList<>();
+
+        for (Point2D p : points) {
+            if (rect.contains(p)) {
+                arr.add(p);
+            }
+        }
+        return arr;
+    }
+
+    // a nearest neighbor in the set to point p; null if the set is empty
     public Point2D nearest(Point2D p) {
+        if (p == null) throw new IllegalArgumentException("Target Point must not be null");
+        if (points.isEmpty()) return null;
 
-        return null;
-    }            // a nearest neighbor in the set to point p; null if the set is empty
+        Point2D nearest = points.first();
+        double minDist = nearest.distanceTo(p);
+
+        for (Point2D curr : points) {
+            double currDist = curr.distanceTo(p);
+            if (currDist < minDist) {
+                nearest = curr;
+                minDist = currDist;
+            }
+        }
+        return nearest;
+    }
 
     // unit testing of the methods (optional)
     public static void main(String[] args) {
