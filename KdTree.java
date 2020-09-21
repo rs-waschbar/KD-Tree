@@ -7,6 +7,7 @@
 
 import edu.princeton.cs.algs4.Point2D;
 import edu.princeton.cs.algs4.RectHV;
+import edu.princeton.cs.algs4.StdDraw;
 
 import java.util.ArrayList;
 
@@ -54,7 +55,7 @@ public class KdTree {
         return size;
     }
 
-    // TODO
+
     // add the point to the set (if it is not already in the set)
     public void insert(Point2D p) {
         root = insert(root, p, null);
@@ -116,16 +117,44 @@ public class KdTree {
 
     // draw all points to standard draw
     public void draw() {
-        draw(root);
+        draw(root, null);
     }
 
-    private void draw(KdNode node) {
+    private void draw(KdNode node, KdNode parent) {
         if (node == null) return;
 
+        StdDraw.setPenColor(StdDraw.BLACK);
+        StdDraw.setPenRadius(0.01);
         node.point.draw();
-        draw(node.left);
-        draw(node.right);
+
+
+        if (parent == null) {
+            StdDraw.line(node.point.x(), 0, node.point.x(), 1);
+        } else {
+            int compare = compareTroughDirection(parent, node.point);
+
+            if (compare > 0 && node.splitDir == Split.HORIZONTAL) {
+                StdDraw.setPenColor(StdDraw.RED);
+                StdDraw.line(parent.point.x(), node.point.y(), 1, node.point.y());
+
+            } else if (compare < 0 && node.splitDir == Split.HORIZONTAL) {
+                StdDraw.setPenColor(StdDraw.RED);
+                StdDraw.line(0, node.point.y(), parent.point.x(), node.point.y());
+
+            } else if (compare > 0 && node.splitDir == Split.VERTICAL) {
+                StdDraw.setPenColor(StdDraw.RED);
+                StdDraw.line(node.point.x(), parent.point.y(), node.point.x(), 1);
+
+            } else if (compare < 0 && node.splitDir == Split.VERTICAL) {
+                StdDraw.setPenColor(StdDraw.RED);
+                StdDraw.line(node.point.x(), 0, node.point.x(), parent.point.y());
+            }
+        }
+
+        draw(node.left, parent);
+        draw(node.right, parent);
     }
+
 
     // TODO
     // all points that are inside the rectangle (or on the boundary)
