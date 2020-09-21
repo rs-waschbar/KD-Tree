@@ -70,10 +70,10 @@ public class PointSET {
         if (points.isEmpty()) return null;
 
         Point2D nearest = points.first();
-        double minDist = nearest.distanceTo(p);
+        double minDist = nearest.distanceSquaredTo(p);
 
         for (Point2D curr : points) {
-            double currDist = curr.distanceTo(p);
+            double currDist = curr.distanceSquaredTo(p);
             if (currDist < minDist) {
                 nearest = curr;
                 minDist = currDist;
