@@ -168,29 +168,50 @@ public class KdTree {
         return arr;
     }
 
-    /*
-    private void draw(KdNode node, Iterable<Point2D> list) {
-        if (node == null) return;
-
-        node.point.draw();
-
-        if (node.left != null) {
-            draw(node.left);
-        } else if (node.right != null) {
-            draw(node.right);
-        }
-    }
-    */
-
 
     // TODO
     // a nearest neighbor in the set to point p; null if the set is empty
     public Point2D nearest(Point2D p) {
         if (p == null) throw new IllegalArgumentException("Target Point must not be null");
         if (root == null) return null;
+        double minDist = root.point.distanceSquaredTo(p);
 
+        KdNode nearest = searchNearest(root, p, root);
+
+        return nearest.point;
+    }
+
+    private KdNode searchNearest(KdNode curr, Point2D target, KdNode nearest) {
+        double currDist = curr.point.distanceSquaredTo(target);
+        double minDist = nearest.point.distanceSquaredTo(target);
+
+
+
+        if (minDist < currDist) {
+            minDist = currDist;
+            nearest = curr;
+        }
+
+
+        int compare = compareTroughDirection(curr, target);
+
+        if (compare < 0) {
+            nearest = searchNearest(curr.left, target, nearest);
+            if (canContainNearest(curr.right, target, minDist)) {
+                nearest = searchNearest(curr.right, target, nearest);
+            }
+        } else {
+            nearest = searchNearest(curr.right, target, nearest);
+            if (canContainNearest(curr.left, target, minDist)) {
+                nearest = searchNearest(curr.left, target, nearest);
+            }
+        }
 
         return nearest;
+    }
+
+    private boolean canContainNearest(KdNode curr, Point2D target, double minDist) {
+
     }
 
     // unit testing of the methods (optional)
