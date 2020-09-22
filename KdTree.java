@@ -42,6 +42,16 @@ public class KdTree {
             this.rect = rect;
             size++;
         }
+
+        public String toString() {
+            return "KdNode{" +
+                    "point=" + point +
+                    ", rect=" + rect +
+                    ", splitDir=" + splitDir +
+                    // ", \n   left=" + left +
+                    // ", \n   right=" + right +
+                    '}';
+        }
     }
 
     private enum Split {
@@ -68,14 +78,12 @@ public class KdTree {
     }
 
     private KdNode insert(KdNode curr, Point2D nextPoint, KdNode parent) {
-        if (curr == null) {
-            return createKdNode(nextPoint, parent);
-        }
-        int compare = compareTroughDirection(curr, nextPoint);
+        if (curr == null) return createKdNode(nextPoint, parent);
 
+        int compare = compareTroughDirection(curr, nextPoint);
         if (compare < 0) {
             curr.left = insert(curr.left, nextPoint, curr);
-        } else if (compare > 0) {
+        } else { // if (compare >= 0)
             curr.right = insert(curr.right, nextPoint, curr);
         }
 
@@ -166,13 +174,24 @@ public class KdTree {
     private void draw(KdNode node, KdNode parent) {
         if (node == null) return;
 
+        drawNodePoint(node);
+        drawSplitLine(node, parent);
+
+        draw(node.left, parent);
+        draw(node.right, parent);
+    }
+
+
+    private void drawNodePoint(KdNode node) {
         StdDraw.setPenColor(StdDraw.BLACK);
         StdDraw.setPenRadius(0.01);
         node.point.draw();
+    }
 
-
+    private void drawSplitLine(KdNode node, KdNode parent) {
         if (parent == null) {
             StdDraw.line(node.point.x(), 0, node.point.x(), 1);
+
         } else {
             int compare = compareTroughDirection(parent, node.point);
 
@@ -193,9 +212,6 @@ public class KdTree {
                 StdDraw.line(node.point.x(), 0, node.point.x(), parent.point.y());
             }
         }
-
-        draw(node.left, parent);
-        draw(node.right, parent);
     }
 
 
@@ -217,48 +233,76 @@ public class KdTree {
     public Point2D nearest(Point2D p) {
         if (p == null) throw new IllegalArgumentException("Target Point must not be null");
         if (root == null) return null;
-        double minDist = root.point.distanceSquaredTo(p);
 
         KdNode nearest = searchNearest(root, p, root);
 
         return nearest.point;
     }
 
-    private KdNode searchNearest(KdNode curr, Point2D target, KdNode nearest) {
+    private KdNode searchNearest(KdNode curr, Point2D target, KdNode near) {
+        if (curr == null) return near;
+        //KdNode temp;
+
+
+        System.out.println("** now here -> " + curr.point + " --- near point " + near.point);
+
         double currDist = curr.point.distanceSquaredTo(target);
-        double minDist = nearest.point.distanceSquaredTo(target);
-
-
+        double minDist = near.point.distanceSquaredTo(target);
 
         if (minDist < currDist) {
-            minDist = currDist;
-            nearest = curr;
+            near = curr;
         }
-
 
         int compare = compareTroughDirection(curr, target);
-
         if (compare < 0) {
-            nearest = searchNearest(curr.left, target, nearest);
-            if (canContainNearest(curr.right, target, minDist)) {
-                nearest = searchNearest(curr.right, target, nearest);
+            near = searchNearest(curr.left, target, near);
+            minDist = near.point.distanceSquaredTo(target);
+
+            if (anotherMayContainNearest(curr, target, minDist)) {
+                near = searchNearest(curr.right, target, near);
             }
+
         } else {
-            nearest = searchNearest(curr.right, target, nearest);
-            if (canContainNearest(curr.left, target, minDist)) {
-                nearest = searchNearest(curr.left, target, nearest);
+            near = searchNearest(curr.right, target, near);
+            minDist = near.point.distanceSquaredTo(target);
+
+            if (anotherMayContainNearest(curr, target, minDist)) {
+                near = searchNearest(curr.left, target, near);
             }
         }
-
-        return nearest;
+        return near;
     }
 
-    private boolean canContainNearest(KdNode curr, Point2D target, double minDist) {
-
+    private boolean anotherMayContainNearest(KdNode parent, Point2D target, double minDist) {
+        if (parent.splitDir == Split.VERTICAL) {
+            return target.distanceSquaredTo(new Point2D(parent.point.x(), target.y())) < minDist;
+        } else {
+            return target.distanceSquaredTo(new Point2D(target.x(), parent.point.y())) < minDist;
+        }
     }
 
     // unit testing of the methods (optional)
     public static void main(String[] args) {
+        KdTree kdTree = new KdTree();
+
+        System.out.println(kdTree.size());
+        System.out.println(kdTree.root);
+
+        System.out.println("*********");
+
+        Point2D target = new Point2D(0.95, 0.1);
+
+        kdTree.insert(new Point2D(0.5, 0.5));
+        kdTree.insert(new Point2D(0.25, 0.3));
+        kdTree.insert(new Point2D(0.7, 0.6));
+        kdTree.insert(new Point2D(0.9, 0.2));
+        kdTree.insert(new Point2D(0.2, 0.8));
+
+        System.out.println(kdTree.root);
+        System.out.println(kdTree.size());
+
+        System.out.println(kdTree.nearest(target));
+
 
     }
 }
