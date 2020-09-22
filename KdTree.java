@@ -80,7 +80,7 @@ public class KdTree {
     private KdNode insert(KdNode curr, Point2D nextPoint, KdNode parent) {
         if (curr == null) return createKdNode(nextPoint, parent);
 
-        int compare = compareTroughDirection(curr, nextPoint);
+        int compare = compareSplitDirection(curr, nextPoint);
         if (compare < 0) {
             curr.left = insert(curr.left, nextPoint, curr);
         } else { // if (compare >= 0)
@@ -132,10 +132,10 @@ public class KdTree {
     }
 
     private boolean isSmaller(Point2D point, KdNode parent) {
-        return compareTroughDirection(parent, point) < 0;
+        return compareSplitDirection(parent, point) < 0;
     }
 
-    private int compareTroughDirection(KdNode parent, Point2D point) {
+    private int compareSplitDirection(KdNode parent, Point2D point) {
         int compare;
 
         if (parent.splitDir == Split.VERTICAL) {
@@ -153,7 +153,7 @@ public class KdTree {
         KdNode node = root;
 
         while (node != null) {
-            int compare = compareTroughDirection(node, p);
+            int compare = compareSplitDirection(node, p);
 
             if (compare < 0) {
                 node = node.left;
@@ -193,7 +193,7 @@ public class KdTree {
             StdDraw.line(node.point.x(), 0, node.point.x(), 1);
 
         } else {
-            int compare = compareTroughDirection(parent, node.point);
+            int compare = compareSplitDirection(parent, node.point);
 
             if (compare > 0 && node.splitDir == Split.HORIZONTAL) {
                 StdDraw.setPenColor(StdDraw.BLUE);
@@ -221,14 +221,37 @@ public class KdTree {
         if (rect == null) throw new IllegalArgumentException("Rectangle must not be null");
 
         ArrayList<Point2D> arr = new ArrayList<>();
-
-        // ???
+        searchPointsInRect(root, rect, arr);
 
         return arr;
     }
 
+    private void searchPointsInRect(KdNode node, RectHV rect, ArrayList<Point2D> result) {
+        if (node == null) return;
 
-    // TODO
+        if (rect.contains(node.point)) {
+            result.add(node.point);
+        }
+
+        int compare = compareRectToNode(node, rect);
+
+        if (compare < 1) {
+            searchPointsInRect(node.left, rect, result);
+        } else if (compare > 1) {
+            searchPointsInRect(node.right, rect, result);
+        } else {
+            searchPointsInRect(node.left, rect, result);
+            searchPointsInRect(node.right, rect, result);
+        }
+    }
+
+    private int compareRectToNode(KdNode node, RectHV rect) {
+        return compareSplitDirection(node, new Point2D(rect.xmin(), rect.ymin()))
+                + compareSplitDirection(node, new Point2D(rect.xmax(), rect.ymax()));
+    }
+
+
+
     // a nearest neighbor in the set to point p; null if the set is empty
     public Point2D nearest(Point2D p) {
         if (p == null) throw new IllegalArgumentException("Target Point must not be null");
@@ -241,36 +264,34 @@ public class KdTree {
 
     private KdNode searchNearest(KdNode curr, Point2D target, KdNode near) {
         if (curr == null) return near;
-        //KdNode temp;
 
-
-        System.out.println("** now here -> " + curr.point + " --- near point " + near.point);
+        KdNode best = near;
 
         double currDist = curr.point.distanceSquaredTo(target);
-        double minDist = near.point.distanceSquaredTo(target);
+        double minDist = best.point.distanceSquaredTo(target);
 
-        if (minDist < currDist) {
-            near = curr;
+        if (currDist < minDist) {
+            best = curr;
         }
 
-        int compare = compareTroughDirection(curr, target);
+        int compare = compareSplitDirection(curr, target);
         if (compare < 0) {
-            near = searchNearest(curr.left, target, near);
+            best = searchNearest(curr.left, target, best);
             minDist = near.point.distanceSquaredTo(target);
 
             if (anotherMayContainNearest(curr, target, minDist)) {
-                near = searchNearest(curr.right, target, near);
+                best = searchNearest(curr.right, target, best);
             }
 
         } else {
-            near = searchNearest(curr.right, target, near);
+            best = searchNearest(curr.right, target, best);
             minDist = near.point.distanceSquaredTo(target);
 
             if (anotherMayContainNearest(curr, target, minDist)) {
-                near = searchNearest(curr.left, target, near);
+                best = searchNearest(curr.left, target, best);
             }
         }
-        return near;
+        return best;
     }
 
     private boolean anotherMayContainNearest(KdNode parent, Point2D target, double minDist) {
@@ -290,18 +311,42 @@ public class KdTree {
 
         System.out.println("*********");
 
-        Point2D target = new Point2D(0.95, 0.1);
+        Point2D p1 = new Point2D(0.25, 0.3);
+        Point2D p2 = new Point2D(0.7, 0.6);
 
         kdTree.insert(new Point2D(0.5, 0.5));
-        kdTree.insert(new Point2D(0.25, 0.3));
-        kdTree.insert(new Point2D(0.7, 0.6));
-        kdTree.insert(new Point2D(0.9, 0.2));
+        kdTree.insert(p1);
+        kdTree.insert(p2);
         kdTree.insert(new Point2D(0.2, 0.8));
+        kdTree.insert(new Point2D(0.4, 0.6));
+        kdTree.insert(new Point2D(0.7, 0.1));
+        kdTree.insert(new Point2D(0.3, 0.3));
+        kdTree.insert(new Point2D(0.34, 0.27));
+        kdTree.insert(new Point2D(0.67, 0.5));
+        kdTree.insert(new Point2D(0.5, 0.9));
+        kdTree.insert(new Point2D(0.34, 0.2));
+        kdTree.insert(new Point2D(0.87, 0.7));
+
+        Point2D target = new Point2D(0.73, 0.5);
+        Point2D target2 = new Point2D(0.3, 0.9);
+
+        System.out.println("compare test: " + kdTree.compareSplitDirection(kdTree.root, target));
+
+        System.out.println(kdTree.root.left);
+        System.out.println("compare test2: " + kdTree.compareSplitDirection(kdTree.root.left, target2));
+
+        System.out.println("********");
+
+
 
         System.out.println(kdTree.root);
         System.out.println(kdTree.size());
 
+        System.out.println("target: " + target);
         System.out.println(kdTree.nearest(target));
+
+        System.out.println("target2: " + target2);
+        System.out.println(kdTree.nearest(target2));
 
 
     }
