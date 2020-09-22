@@ -29,16 +29,18 @@ public class KdTree {
         size = 0;
     }
 
-    private static class KdNode {
+    private class KdNode {
         Point2D point;
         RectHV rect;
         KdNode left;
         KdNode right;
         Split splitDir;
 
-        public KdNode(Point2D point, Split split) {
+        public KdNode(Point2D point, Split split, RectHV rect) {
             this.point = point;
             this.splitDir = split;
+            this.rect = rect;
+            size++;
         }
     }
 
@@ -58,11 +60,17 @@ public class KdTree {
 
     // add the point to the set (if it is not already in the set)
     public void insert(Point2D p) {
+        if (root == null) {
+            root = new KdNode(p, Split.VERTICAL, new RectHV(0, 0, 1, 1));
+            return;
+        }
         root = insert(root, p, null);
     }
 
     private KdNode insert(KdNode curr, Point2D nextPoint, KdNode parent) {
-        if (curr == null) return new KdNode(nextPoint, swapDirectionFrom(parent));
+        if (curr == null) {
+            return createKdNode(nextPoint, parent);
+        }
         int compare = compareTroughDirection(curr, nextPoint);
 
         if (compare < 0) {
@@ -74,27 +82,62 @@ public class KdTree {
         return curr;
     }
 
-    private Split swapDirectionFrom(KdNode prevNode) {
-        if (prevNode == null || prevNode.splitDir == Split.HORIZONTAL) {
+    private KdNode createKdNode(Point2D point, KdNode parent) {
+        KdNode curr = new KdNode(point,
+                                 swapDirectionFrom(parent),
+                                 getRect(point, parent));
+        return curr;
+    }
+
+    private Split swapDirectionFrom(KdNode parent) {
+        if (parent == null || parent.splitDir == Split.HORIZONTAL) {
             return Split.VERTICAL;
         } else {
             return Split.HORIZONTAL;
         }
     }
 
-    private int compareTroughDirection(KdNode node, Point2D nextPoint) {
+    private RectHV getRect(Point2D point, KdNode parent) {
+        if (parent.splitDir == Split.VERTICAL && isSmaller(point, parent)) {
+            return new RectHV(parent.rect.xmin(),
+                              parent.rect.ymin(),
+                              parent.point.x(),
+                              parent.rect.ymax());
+
+        } else if (parent.splitDir == Split.VERTICAL && !isSmaller(point, parent)) {
+            return new RectHV(parent.point.x(),
+                              parent.rect.ymin(),
+                              parent.rect.xmax(),
+                              parent.rect.ymax());
+
+        } else if (parent.splitDir == Split.HORIZONTAL && isSmaller(point, parent)) {
+            return new RectHV(parent.rect.xmin(),
+                              parent.rect.ymin(),
+                              parent.rect.xmax(),
+                              parent.point.y());
+        } else {
+            return new RectHV(parent.rect.xmin(),
+                              parent.point.y(),
+                              parent.rect.xmax(),
+                              parent.rect.ymax());
+        }
+    }
+
+    private boolean isSmaller(Point2D point, KdNode parent) {
+        return compareTroughDirection(parent, point) < 0;
+    }
+
+    private int compareTroughDirection(KdNode parent, Point2D point) {
         int compare;
 
-        if (node.splitDir == Split.VERTICAL) {
-            compare = Point2D.X_ORDER.compare(nextPoint, node.point);
+        if (parent.splitDir == Split.VERTICAL) {
+            compare = Point2D.X_ORDER.compare(point, parent.point);
         } else {
-            compare = Point2D.Y_ORDER.compare(nextPoint, node.point);
+            compare = Point2D.Y_ORDER.compare(point, parent.point);
         }
         return compare;
     }
 
-
-    // TODO
     // does the set contain point p?
     public boolean contains(Point2D p) {
         if (p == null) throw new IllegalArgumentException("Point must not be null");
@@ -134,11 +177,11 @@ public class KdTree {
             int compare = compareTroughDirection(parent, node.point);
 
             if (compare > 0 && node.splitDir == Split.HORIZONTAL) {
-                StdDraw.setPenColor(StdDraw.RED);
+                StdDraw.setPenColor(StdDraw.BLUE);
                 StdDraw.line(parent.point.x(), node.point.y(), 1, node.point.y());
 
             } else if (compare < 0 && node.splitDir == Split.HORIZONTAL) {
-                StdDraw.setPenColor(StdDraw.RED);
+                StdDraw.setPenColor(StdDraw.BLUE);
                 StdDraw.line(0, node.point.y(), parent.point.x(), node.point.y());
 
             } else if (compare > 0 && node.splitDir == Split.VERTICAL) {
