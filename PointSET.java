@@ -84,12 +84,6 @@ public class PointSET {
 
     // unit testing of the methods (optional)
     public static void main(String[] args) {
-        PointSET test = new PointSET();
-
-        test.insert(new Point2D(0.2, 0.8));
-        test.insert(new Point2D(0.4, 0.6));
-        test.insert(new Point2D(0.7, 0.1));
-        test.insert(new Point2D(0.3, 0.3));
 
     }
 }
