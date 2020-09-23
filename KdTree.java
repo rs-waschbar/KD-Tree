@@ -43,7 +43,7 @@ public class KdTree {
 
     private enum Split {
         VERTICAL,
-        HORIZONTAL;
+        HORIZONTAL
     }
 
     public boolean isEmpty() {
@@ -272,44 +272,6 @@ public class KdTree {
 
     // unit testing of the methods (optional)
     public static void main(String[] args) {
-
-
-        KdTree kdTree = new KdTree();
-
-        System.out.println(kdTree.size());
-        System.out.println(kdTree.root);
-
-        System.out.println("*********");
-
-        Point2D p1 = new Point2D(0.25, 0.3);
-        Point2D p2 = new Point2D(0.7, 0.6);
-
-        kdTree.insert(new Point2D(0.5, 0.5));
-        kdTree.insert(p1);
-        kdTree.insert(new Point2D(0.2, 0.8));
-        kdTree.insert(new Point2D(0.4, 0.6));
-        kdTree.insert(new Point2D(0.7, 0.1));
-        kdTree.insert(new Point2D(0.7, 0.1));
-        kdTree.insert(new Point2D(0.7, 0.1));
-
-
-        Point2D target = new Point2D(0.73, 0.5);
-        Point2D target2 = new Point2D(0.3, 0.9);
-
-        System.out.println("contain test true: " + kdTree.contains(p1));
-        System.out.println("contain test false: " + kdTree.contains(p2));
-
-        System.out.println("********");
-
-        System.out.println(kdTree.root);
-        System.out.println(kdTree.size());
-
-        System.out.println("target: " + target);
-        System.out.println(kdTree.nearest(target));
-
-        System.out.println("target2: " + target2);
-        System.out.println(kdTree.nearest(target2));
-
 
     }
 }
