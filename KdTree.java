@@ -29,28 +29,15 @@ public class KdTree {
         size = 0;
     }
 
-    private class KdNode {
+    private static class KdNode {
         Point2D point;
-        RectHV rect;
         KdNode left;
         KdNode right;
         Split splitDir;
 
-        public KdNode(Point2D point, Split split, RectHV rect) {
+        public KdNode(Point2D point, Split split) {
             this.point = point;
             this.splitDir = split;
-            this.rect = rect;
-            size++;
-        }
-
-        public String toString() {
-            return "KdNode{" +
-                    "point=" + point +
-                    ", rect=" + rect +
-                    ", splitDir=" + splitDir +
-                    // ", \n   left=" + left +
-                    // ", \n   right=" + right +
-                    '}';
         }
     }
 
@@ -70,15 +57,19 @@ public class KdTree {
 
     // add the point to the set (if it is not already in the set)
     public void insert(Point2D p) {
-        if (root == null) {
-            root = new KdNode(p, Split.VERTICAL, new RectHV(0, 0, 1, 1));
-            return;
-        }
+        if (p == null) throw new IllegalArgumentException("Point must not be null");
+
         root = insert(root, p, null);
     }
 
     private KdNode insert(KdNode curr, Point2D nextPoint, KdNode parent) {
-        if (curr == null) return createKdNode(nextPoint, parent);
+        if (curr == null) {
+            size++;
+            return new KdNode(nextPoint, swapDirectionFrom(parent));
+        }
+        if (nextPoint.equals(curr.point)) {
+            return curr;
+        }
 
         int compare = compareSplitDirection(curr, nextPoint);
         if (compare < 0) {
@@ -90,49 +81,12 @@ public class KdTree {
         return curr;
     }
 
-    private KdNode createKdNode(Point2D point, KdNode parent) {
-        KdNode curr = new KdNode(point,
-                                 swapDirectionFrom(parent),
-                                 getRect(point, parent));
-        return curr;
-    }
-
     private Split swapDirectionFrom(KdNode parent) {
         if (parent == null || parent.splitDir == Split.HORIZONTAL) {
             return Split.VERTICAL;
         } else {
             return Split.HORIZONTAL;
         }
-    }
-
-    private RectHV getRect(Point2D point, KdNode parent) {
-        if (parent.splitDir == Split.VERTICAL && isSmaller(point, parent)) {
-            return new RectHV(parent.rect.xmin(),
-                              parent.rect.ymin(),
-                              parent.point.x(),
-                              parent.rect.ymax());
-
-        } else if (parent.splitDir == Split.VERTICAL && !isSmaller(point, parent)) {
-            return new RectHV(parent.point.x(),
-                              parent.rect.ymin(),
-                              parent.rect.xmax(),
-                              parent.rect.ymax());
-
-        } else if (parent.splitDir == Split.HORIZONTAL && isSmaller(point, parent)) {
-            return new RectHV(parent.rect.xmin(),
-                              parent.rect.ymin(),
-                              parent.rect.xmax(),
-                              parent.point.y());
-        } else {
-            return new RectHV(parent.rect.xmin(),
-                              parent.point.y(),
-                              parent.rect.xmax(),
-                              parent.rect.ymax());
-        }
-    }
-
-    private boolean isSmaller(Point2D point, KdNode parent) {
-        return compareSplitDirection(parent, point) < 0;
     }
 
     private int compareSplitDirection(KdNode parent, Point2D point) {
@@ -146,21 +100,33 @@ public class KdTree {
         return compare;
     }
 
+    // helper method for rectangles, where we can't create explicit points
+    // due to the assignment requirements for the size of the used memory
+    private int compareSplitDirection(KdNode parent, double x, double y) {
+        int compare;
+
+        if (parent.splitDir == Split.VERTICAL) {
+            compare = Double.compare(x, parent.point.x());
+        } else {
+            compare = Double.compare(y, parent.point.y());
+        }
+        return compare;
+    }
+
     // does the set contain point p?
     public boolean contains(Point2D p) {
         if (p == null) throw new IllegalArgumentException("Point must not be null");
-
         KdNode node = root;
 
         while (node != null) {
+            if (p.equals(node.point)) {
+                return true;
+            }
             int compare = compareSplitDirection(node, p);
-
             if (compare < 0) {
                 node = node.left;
-            } else if (compare > 0) {
+            } else { // if (compare >= 0)
                 node = node.right;
-            } else {
-                return true;
             }
         }
         return false;
@@ -214,8 +180,6 @@ public class KdTree {
         }
     }
 
-
-    // TODO
     // all points that are inside the rectangle (or on the boundary)
     public Iterable<Point2D> range(RectHV rect) {
         if (rect == null) throw new IllegalArgumentException("Rectangle must not be null");
@@ -235,9 +199,9 @@ public class KdTree {
 
         int compare = compareRectToNode(node, rect);
 
-        if (compare < 1) {
+        if (compare < -1) {
             searchPointsInRect(node.left, rect, result);
-        } else if (compare > 1) {
+        } else if (compare >= 1) {
             searchPointsInRect(node.right, rect, result);
         } else {
             searchPointsInRect(node.left, rect, result);
@@ -246,11 +210,9 @@ public class KdTree {
     }
 
     private int compareRectToNode(KdNode node, RectHV rect) {
-        return compareSplitDirection(node, new Point2D(rect.xmin(), rect.ymin()))
-                + compareSplitDirection(node, new Point2D(rect.xmax(), rect.ymax()));
+        return compareSplitDirection(node, rect.xmin(), rect.ymin())
+                + compareSplitDirection(node, rect.xmax(), rect.ymax());
     }
-
-
 
     // a nearest neighbor in the set to point p; null if the set is empty
     public Point2D nearest(Point2D p) {
@@ -296,14 +258,22 @@ public class KdTree {
 
     private boolean anotherMayContainNearest(KdNode parent, Point2D target, double minDist) {
         if (parent.splitDir == Split.VERTICAL) {
-            return target.distanceSquaredTo(new Point2D(parent.point.x(), target.y())) < minDist;
+            return distanceSquaredTo(target, parent.point.x(), target.y()) < minDist;
         } else {
-            return target.distanceSquaredTo(new Point2D(target.x(), parent.point.y())) < minDist;
+            return distanceSquaredTo(target, target.x(), parent.point.y()) < minDist;
         }
+    }
+
+    private double distanceSquaredTo(Point2D target, double x, double y) {
+        double dx = target.x() - x;
+        double dy = target.y() - y;
+        return dx*dx + dy*dy;
     }
 
     // unit testing of the methods (optional)
     public static void main(String[] args) {
+
+
         KdTree kdTree = new KdTree();
 
         System.out.println(kdTree.size());
@@ -316,28 +286,20 @@ public class KdTree {
 
         kdTree.insert(new Point2D(0.5, 0.5));
         kdTree.insert(p1);
-        kdTree.insert(p2);
         kdTree.insert(new Point2D(0.2, 0.8));
         kdTree.insert(new Point2D(0.4, 0.6));
         kdTree.insert(new Point2D(0.7, 0.1));
-        kdTree.insert(new Point2D(0.3, 0.3));
-        kdTree.insert(new Point2D(0.34, 0.27));
-        kdTree.insert(new Point2D(0.67, 0.5));
-        kdTree.insert(new Point2D(0.5, 0.9));
-        kdTree.insert(new Point2D(0.34, 0.2));
-        kdTree.insert(new Point2D(0.87, 0.7));
+        kdTree.insert(new Point2D(0.7, 0.1));
+        kdTree.insert(new Point2D(0.7, 0.1));
+
 
         Point2D target = new Point2D(0.73, 0.5);
         Point2D target2 = new Point2D(0.3, 0.9);
 
-        System.out.println("compare test: " + kdTree.compareSplitDirection(kdTree.root, target));
-
-        System.out.println(kdTree.root.left);
-        System.out.println("compare test2: " + kdTree.compareSplitDirection(kdTree.root.left, target2));
+        System.out.println("contain test true: " + kdTree.contains(p1));
+        System.out.println("contain test false: " + kdTree.contains(p2));
 
         System.out.println("********");
-
-
 
         System.out.println(kdTree.root);
         System.out.println(kdTree.size());
