@@ -1,6 +1,6 @@
 # KD-Tree
 Coursera Princeton Algorithms course part 1 
-week 5 assignment
+week 5 final assignment
 
 Write a data type to represent a set of points in the unit square 
 (all points have x- and y-coordinates between 0 and 1) using a 2d-tree 
